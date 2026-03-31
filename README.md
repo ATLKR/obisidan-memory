@@ -38,23 +38,35 @@ python3 shared/obsidian_memory.py
 
 ## Plugin Structure
 
-### 1. Claude Code Plugin
+### 1. Claude Code Plugin ⭐ (Supports Hooks)
 
 Location: `ClaudeCode/`
+
+Claude Code has rich **hook support** for automating context loading:
 
 ```
 ClaudeCode/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin manifest
+│   └── plugin.json          # Plugin manifest with hooks config
 ├── skills/
 │   └── obsidian-memory/
 │       └── SKILL.md         # Skill definition
 ├── commands/
 │   └── vault-search.md      # Quick command
-└── mcp-servers/
-    └── obsidian-memory-server/
-        └── server.py        # MCP server implementation
+├── mcp-servers/
+│   └── obsidian-memory-server/
+│       └── server.py        # MCP server implementation
+└── hooks/                    # 🎣 Automatic context hooks
+    ├── on-session-start.py   # Load context at session start
+    ├── on-prompt-submit.py   # Enrich prompts with vault context
+    └── on-tool-use.py        # Store tool results to vault
 ```
+
+**Supported Hook Events:**
+- `SessionStart` - Load recent context when session begins
+- `UserPromptSubmit` - Auto-enrich prompts with relevant vault content
+- `PostToolUse` - Store important tool executions automatically
+- `PreToolUse`, `InstructionsLoaded`, `Notification`, etc.
 
 **Installation:**
 ```bash
@@ -68,13 +80,21 @@ claude plugin install /path/to/ClaudeCode
 
 **Usage:**
 ```
+# Automatic (via hooks):
+# - Context loads automatically when session starts
+# - Prompts are enriched with relevant vault content
+# - Tool executions are stored automatically
+
+# Manual skill usage:
 /obsidian-memory:remember "Important decision about database schema"
 /obsidian-memory:vault-search "trading system"
 ```
 
-### 2. Codex CLI Skill
+### 2. Codex CLI Skill ❌ (No Hooks)
 
 Location: `Codex/`
+
+> ⚠️ **Note:** Codex CLI does **not** support hooks. It uses a skill-based system where you invoke tools explicitly via prompts or CLI scripts.
 
 ```
 Codex/
@@ -106,14 +126,16 @@ python3 .codex/skills/obsidian-memory/scripts/search.py "database"
 python3 .codex/skills/obsidian-memory/scripts/query.py "architecture"
 python3 .codex/skills/obsidian-memory/scripts/history.py
 
-# Via Codex prompt
+# Via Codex prompt (skill invocation)
 "Remember that we decided to use PostgreSQL"
 "Search my vault for database decisions"
 ```
 
-### 3. Hermes Plugin
+### 3. Hermes Plugin ⚙️ (Programmatic Only)
 
 Location: `Hermes/`
+
+> ⚠️ **Note:** Hermes is a programmatic agent framework. It does **not** have a hook system like Claude Code. You call the plugin methods directly in your Python code.
 
 ```
 Hermes/
@@ -148,11 +170,26 @@ python3 Hermes/plugin.py recent
 python3 Hermes/plugin.py stats
 ```
 
-### 4. OpenClaw (Stub)
+### 4. OpenClaw (Stub) 🔮
 
 Location: `OpenClaw/`
 
-Reserved for future agent integration.
+Reserved for future agent integration. Hook support will depend on the target agent framework.
+
+## Hook Support Summary by Harness
+
+| Harness | Hook Support | Type | Context Automation |
+|---------|--------------|------|-------------------|
+| **Claude Code** | ✅ Full | Event-driven hooks | Automatic via `SessionStart`, `UserPromptSubmit`, `PostToolUse` |
+| **Codex CLI** | ❌ None | Skill-based | Manual via skill invocation |
+| **Hermes** | ❌ None | Programmatic API | Manual via Python method calls |
+| **OpenClaw** | 🔮 TBD | Future | Depends on target framework |
+
+**Claude Code Hooks Available:**
+- `SessionStart` - Runs at session start, loads context from vault
+- `UserPromptSubmit` - Runs on each prompt, enriches with relevant vault content
+- `PostToolUse` - Runs after tool execution, stores important results
+- `PreToolUse`, `InstructionsLoaded`, `Notification`, `SubagentStart/Stop`, etc.
 
 ## Shared Module
 
@@ -245,31 +282,35 @@ obsidian-memory/
 ├── .env.example
 ├── requirements.txt
 ├── shared/
-│   └── obsidian_memory.py      # Core shared module
-├── ClaudeCode/                  # Claude Code plugin
+│   └── obsidian_memory.py              # Core shared module
+├── ClaudeCode/                          # Claude Code plugin ✅ Hooks
 │   ├── .claude-plugin/
-│   │   └── plugin.json
+│   │   └── plugin.json                  # Plugin manifest + hooks config
 │   ├── skills/
 │   │   └── obsidian-memory/
-│   │       └── SKILL.md
+│   │       └── SKILL.md                 # Skill definition
 │   ├── commands/
-│   │   └── vault-search.md
-│   └── mcp-servers/
-│       └── obsidian-memory-server/
-│           └── server.py
-├── Codex/                       # Codex CLI skill
+│   │   └── vault-search.md              # Quick command
+│   ├── mcp-servers/
+│   │   └── obsidian-memory-server/
+│   │       └── server.py                # MCP server
+│   └── hooks/                           # 🎣 Automatic context hooks
+│       ├── on-session-start.py          # Load context at session start
+│       ├── on-prompt-submit.py          # Enrich prompts with vault context
+│       └── on-tool-use.py               # Store tool results to vault
+├── Codex/                               # Codex CLI skill ❌ No hooks
 │   └── .codex/
 │       └── skills/
 │           └── obsidian-memory/
-│               ├── SKILL.md
+│               ├── SKILL.md              # Skill definition
 │               └── scripts/
-│                   ├── store.py
-│                   ├── search.py
-│                   ├── query.py
-│                   └── history.py
-├── Hermes/                      # Hermes plugin
+│                   ├── store.py          # Store memory
+│                   ├── search.py         # Search vault
+│                   ├── query.py          # Query entries
+│                   └── history.py        # Get history
+├── Hermes/                              # Hermes plugin ⚙️ API only
 │   └── plugin.py
-└── OpenClaw/                    # OpenClaw stub
+└── OpenClaw/                            # OpenClaw stub 🔮
     └── plugin.py
 ```
 

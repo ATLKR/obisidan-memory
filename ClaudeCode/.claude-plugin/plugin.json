@@ -11,6 +11,26 @@
       "entrypoint": "mcp-servers/obsidian-memory-server/server.py"
     }
   ],
+  "hooks": [
+    {
+      "event": "SessionStart",
+      "type": "command",
+      "command": "hooks/on-session-start.py",
+      "description": "Load recent context from Obsidian Vault at session start"
+    },
+    {
+      "event": "UserPromptSubmit",
+      "type": "command",
+      "command": "hooks/on-prompt-submit.py",
+      "description": "Enrich prompts with relevant Obsidian context"
+    },
+    {
+      "event": "PostToolUse",
+      "type": "command",
+      "command": "hooks/on-tool-use.py",
+      "description": "Store important tool execution results to Obsidian"
+    }
+  ],
   "env": {
     "OBSIDIAN_VAULT_PATH": {
       "description": "Path to your Obsidian vault",
