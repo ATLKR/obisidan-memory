@@ -1,169 +1,182 @@
-# Obsidian Memory System
+# Obsidian Memory Plugins for AI Agents
 
-Multi-Agent Persistent Memory with Cross-Agent Query Protocol
+Independent plugins that enable AI agents to use Obsidian Vault as persistent memory.
 
 ## Overview
 
-This system implements a **persistent memory layer** for multiple AI agents (Codex, Claude Code, Hermes, OpenClaw) using an **Obsidian Vault** as the storage backend.
-
-### Key Research Foundations
-
-| Paper | Contribution |
-|-------|-------------|
-| **Self-Consistency (2203.11171)** | Multiple reasoning paths, consistent answer selection |
-| **ChatDev (2307.07924)** | Communicative agents with structured dialogue |
-
-### Core Architecture
+Each agent has its own plugin that connects directly to your Obsidian Vault. Agents share knowledge **only through the Vault** - there is no direct communication between agents.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CrossAgentQuery Protocol                      │
-│  (Query → Answer with Evidence → Verification → Arbitration)    │
-├─────────────┬─────────────┬─────────────┬───────────────────────┤
-│   Codex     │ ClaudeCode  │   Hermes    │      OpenClaw         │
-│   (Code)    │  (Reason)   │(Orchestrate)│    (Future)         │
-├─────────────┴─────────────┴─────────────┴───────────────────────┤
-│              ObsidianMemory (Persistent Layer)                  │
-│              - Markdown read/write via qmd                      │
-│              - Vector search + metadata indexing                │
-│              - Evidence tracking with confidence scores         │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Claude Code    │     │   Codex CLI     │     │     Hermes      │
+│   (.claude-     │     │  (.codex/skills)│     │  (Python mod)   │
+│    plugin/)     │     │                 │     │                 │
+└────────┬────────┘     └────────┬────────┘     └────────┬────────┘
+         │                       │                       │
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │   Obsidian Vault        │
+                    │  (Markdown files)       │
+                    │                         │
+                    │  claude/  - Claude Code │
+                    │  codex/   - Codex CLI   │
+                    │  hermes/  - Hermes      │
+                    └─────────────────────────┘
 ```
 
-## Features
-
-### Cross-Agent Query Protocol
-
-**Flow:**
-1. **Querier** (Agent A) → **Responder** (Agent B): "What's X?"
-2. **Responder** → **Querier**: "X is Y" + Evidence (source citations)
-3. **Verifier**: Check evidence quality and consistency
-4. **Arbiter** (if disputed): Resolve using Self-Consistency
-
-### Persistent Memory
-
-- All conversations stored in Obsidian Vault
-- Frontmatter metadata (agent, timestamp, tags, confidence)
-- Evidence citations tracked per entry
-- WikiLinks and tags indexed for cross-referencing
-
-## Installation
+## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/ATLKR/obisidan-memory.git
-cd obisidan-memory
-
-# Set your Obsidian vault path
+# Set your vault path
 export OBSIDIAN_VAULT_PATH="~/vaults/AllenPrimaryNotes"
 
-# Optional: Install enhanced dependencies
-pip install -r requirements.txt
+# Test shared module
+python3 shared/obsidian_memory.py
 ```
 
-## Usage
+## Plugin Structure
 
-### CLI
+### 1. Claude Code Plugin
 
+Location: `ClaudeCode/`
+
+```
+ClaudeCode/
+├── .claude-plugin/
+│   └── plugin.json          # Plugin manifest
+├── skills/
+│   └── obsidian-memory/
+│       └── SKILL.md         # Skill definition
+├── commands/
+│   └── vault-search.md      # Quick command
+└── mcp-servers/
+    └── obsidian-memory-server/
+        └── server.py        # MCP server implementation
+```
+
+**Installation:**
 ```bash
-# Query Codex through Hermes
-python main.py query hermes codex "How do I implement a singleton?"
+# Copy or symlink to Claude Code plugins directory
+# On macOS/Linux:
+ln -s $(pwd)/ClaudeCode ~/.claude/plugins/obsidian-memory
 
-# Store a memory
-python main.py store codex "Important pattern..." --tags code python
-
-# Search memory
-python main.py search "trading strategy" --agent hermes
-
-# Interactive mode
-python main.py interactive
+# Or install via Claude Code CLI
+claude plugin install /path/to/ClaudeCode
 ```
 
-### Programmatic
+**Usage:**
+```
+/obsidian-memory:remember "Important decision about database schema"
+/obsidian-memory:vault-search "trading system"
+```
+
+### 2. Codex CLI Skill
+
+Location: `Codex/`
+
+```
+Codex/
+└── .codex/
+    └── skills/
+        └── obsidian-memory/
+            ├── SKILL.md           # Skill definition
+            └── scripts/
+                ├── store.py       # Store memory
+                ├── search.py      # Search vault
+                ├── query.py       # Query entries
+                └── history.py     # Get history
+```
+
+**Installation:**
+```bash
+# Copy or symlink to your project's .codex directory
+cp -r Codex/.codex/skills/obsidian-memory /your/project/.codex/skills/
+
+# Or symlink for development
+ln -s $(pwd)/Codex/.codex/skills/obsidian-memory /your/project/.codex/skills/
+```
+
+**Usage:**
+```bash
+# Direct script usage
+python3 .codex/skills/obsidian-memory/scripts/store.py "Remember this"
+python3 .codex/skills/obsidian-memory/scripts/search.py "database"
+python3 .codex/skills/obsidian-memory/scripts/query.py "architecture"
+python3 .codex/skills/obsidian-memory/scripts/history.py
+
+# Via Codex prompt
+"Remember that we decided to use PostgreSQL"
+"Search my vault for database decisions"
+```
+
+### 3. Hermes Plugin
+
+Location: `Hermes/`
+
+```
+Hermes/
+└── plugin.py    # Python module
+```
+
+**Usage:**
+```python
+from Hermes.plugin import HermesMemoryPlugin
+
+plugin = HermesMemoryPlugin()
+
+# Store memory
+entry_id = plugin.remember("Important decision", tags=["architecture"])
+
+# Recall memories
+results = plugin.recall("database decisions", n_results=5)
+
+# Search
+matches = plugin.search("PostgreSQL", limit=10)
+
+# Get recent history
+recent = plugin.get_recent(limit=10)
+```
+
+**CLI:**
+```bash
+python3 Hermes/plugin.py remember "Content here" --tags tag1 tag2
+python3 Hermes/plugin.py recall "search query"
+python3 Hermes/plugin.py search "pattern"
+python3 Hermes/plugin.py recent
+python3 Hermes/plugin.py stats
+```
+
+### 4. OpenClaw (Stub)
+
+Location: `OpenClaw/`
+
+Reserved for future agent integration.
+
+## Shared Module
+
+Location: `shared/obsidian_memory.py`
+
+Core module used by all plugins:
 
 ```python
-from main import ObsidianMemorySystem
+from obsidian_memory import get_memory
 
-# Initialize
-system = ObsidianMemorySystem(vault_path="~/vaults/AllenPrimaryNotes")
+# Get memory instance for an agent
+memory = get_memory('agent-name')
 
-# Cross-agent query with verification
-result = system.query_agent(
-    querier="hermes",
-    responder="claude",
-    question="What are the key components of the trading system?"
-)
+# Store
+entry = memory.store("Content", tags=["tag1"])
 
-# Result includes:
-# - answer: Response from responder
-# - evidence: Source citations with confidence
-# - verification: Validity check with reasoning
-```
+# Search
+matches = memory.search("pattern")
 
-## Agent Capabilities
+# Query
+entries = memory.query("search text", n_results=5)
 
-### Codex
-- Code generation and review
-- Technical documentation lookup
-- Pattern matching in vault code
-
-### Claude Code
-- Complex reasoning and analysis
-- Architecture design
-- Evidence verification with detailed reasoning
-- Arbitration of disputes
-
-### Hermes
-- Multi-agent orchestration
-- Query routing
-- System monitoring
-- Protocol enforcement
-
-### OpenClaw
-- Future extensibility
-- Plugin hosting
-- External integrations
-
-## Evidence Format
-
-```python
-Evidence(
-    source_type='memory',      # 'memory', 'arxiv', 'web', 'calculation'
-    source_id='memory:abc123',   # Identifier
-    quote='Relevant excerpt...', # The evidence text
-    confidence=0.85              # Confidence score 0.0-1.0
-)
-```
-
-## Verification
-
-Answers are verified using:
-1. **Evidence Existence**: Check if cited sources exist
-2. **Source Diversity**: Multiple evidence types preferred
-3. **Confidence Scoring**: Weighted average of evidence confidence
-4. **Memory Verification**: Confirm evidence is retrievable
-
-## Directory Structure
-
-```
-.
-├── main.py                    # Entry point
-├── requirements.txt           # Dependencies
-├── shared/
-│   ├── core/
-│   │   └── obsidian_memory.py # Persistent memory layer
-│   ├── protocols/
-│   │   └── cross_agent_query.py # Query protocol
-│   └── utils/
-│       └── helpers.py         # Utilities
-├── Codex/
-│   └── agent.py              # Codex plugin
-├── ClaudeCode/
-│   └── agent.py              # Claude Code plugin
-├── Hermes/
-│   └── agent.py              # Hermes plugin
-└── OpenClaw/
-    └── agent.py              # OpenClaw stub
+# Get history
+history = memory.get_conversation_history(limit=10)
 ```
 
 ## Environment Variables
@@ -172,10 +185,93 @@ Answers are verified using:
 |----------|---------|-------------|
 | `OBSIDIAN_VAULT_PATH` | `~/vaults/AllenPrimaryNotes` | Path to Obsidian vault |
 
-## Research References
+## File Storage Format
 
-- Wang et al. (2022). "Self-Consistency Improves Chain of Thought Reasoning in Language Models". ICLR 2023. arXiv:2203.11171
-- Qian et al. (2023). "ChatDev: Communicative Agents for Software Development". ACL 2024. arXiv:2307.07924
+Memories are stored as markdown files:
+
+```markdown
+---
+id: abc123
+timestamp: 2026-03-31T12:00:00
+agent: claude
+tags: ["decision", "database"]
+metadata:
+  session: xyz789
+---
+
+# Content goes here
+
+Full text of the memory...
+```
+
+**Storage locations:**
+- Claude Code: `<vault>/claude/YYYY-MM-DD_<id>.md`
+- Codex CLI: `<vault>/codex/YYYY-MM-DD_<id>.md`
+- Hermes: `<vault>/hermes/YYYY-MM-DD_<id>.md`
+- OpenClaw: `<vault>/openclaw/YYYY-MM-DD_<id>.md`
+
+## Example Workflow
+
+1. **Claude Code session:**
+   ```
+   User: "Remember that we decided to use Redis for caching"
+   Claude: Stores to `<vault>/claude/2026-03-31_abc123.md`
+   ```
+
+2. **Later, Codex CLI session:**
+   ```
+   User: "What did we decide about caching?"
+   Codex: Searches vault, finds the Redis decision
+   ```
+
+3. **Hermes automation:**
+   ```python
+   # Cron job or scheduled task
+   plugin = HermesMemoryPlugin()
+   daily_summary = plugin.recall("daily summary", n_results=1)
+   ```
+
+## Requirements
+
+- Python 3.8+
+- Obsidian Vault (any markdown-based vault)
+- No external dependencies (uses Python stdlib only)
+
+## Directory Structure
+
+```
+obsidian-memory/
+├── README.md
+├── .env.example
+├── requirements.txt
+├── shared/
+│   └── obsidian_memory.py      # Core shared module
+├── ClaudeCode/                  # Claude Code plugin
+│   ├── .claude-plugin/
+│   │   └── plugin.json
+│   ├── skills/
+│   │   └── obsidian-memory/
+│   │       └── SKILL.md
+│   ├── commands/
+│   │   └── vault-search.md
+│   └── mcp-servers/
+│       └── obsidian-memory-server/
+│           └── server.py
+├── Codex/                       # Codex CLI skill
+│   └── .codex/
+│       └── skills/
+│           └── obsidian-memory/
+│               ├── SKILL.md
+│               └── scripts/
+│                   ├── store.py
+│                   ├── search.py
+│                   ├── query.py
+│                   └── history.py
+├── Hermes/                      # Hermes plugin
+│   └── plugin.py
+└── OpenClaw/                    # OpenClaw stub
+    └── plugin.py
+```
 
 ## License
 
