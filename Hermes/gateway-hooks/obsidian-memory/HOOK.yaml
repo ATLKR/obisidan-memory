@@ -1,0 +1,14 @@
+name: obsidian-memory
+description: |
+  Load and store context from Obsidian Vault.
+  
+  This Gateway hook:
+  - Loads recent context when agent starts
+  - Enriches messages with relevant vault content
+  - Stores important tool executions automatically
+  - Runs non-blocking in Gateway only
+events:
+  - agent:start
+  - agent:end
+  - message:received
+  - tool:after

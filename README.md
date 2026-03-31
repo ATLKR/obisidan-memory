@@ -169,34 +169,45 @@ python3 .codex/skills/obsidian-memory/scripts/search.py "database"
 "Search my vault for database decisions"
 ```
 
-### 3. Hermes Plugin ⚙️ (Programmatic Only)
+### 3. Hermes Agent Plugin ⭐ (Dual Hook System)
 
 Location: `Hermes/`
 
-> ⚠️ **Note:** Hermes is a programmatic agent framework. It does **not** have a hook system like Claude Code. You call the plugin methods directly in your Python code.
+Hermes has **two** hook systems:
+
+1. **Plugin hooks** (`ctx.register_hook()`) - Tool interception, runs in CLI + Gateway
+2. **Gateway hooks** (`~/.hermes/hooks/`) - Event-driven, runs in Gateway only
 
 ```
 Hermes/
-└── plugin.py    # Python module
+├── plugin.py                      # Python module with plugin hooks
+└── gateway-hooks/
+    └── obsidian-memory/
+        ├── HOOK.yaml              # Gateway hook manifest
+        └── handler.py             # Gateway hook handler
 ```
 
-**Usage:**
+**Installation:**
+
+```bash
+# 1. Install Gateway hooks
+cp -r Hermes/gateway-hooks/obsidian-memory ~/.hermes/hooks/
+
+# 2. Or use CLI installer
+python3 Hermes/plugin.py install-hooks
+```
+
+**Plugin Hooks Usage (ctx.register_hook()):**
 ```python
 from Hermes.plugin import HermesMemoryPlugin
 
+# With Hermes context (automatic hook registration)
+plugin = HermesMemoryPlugin(ctx=hermes_context)
+
+# Or manual usage
 plugin = HermesMemoryPlugin()
-
-# Store memory
 entry_id = plugin.remember("Important decision", tags=["architecture"])
-
-# Recall memories
 results = plugin.recall("database decisions", n_results=5)
-
-# Search
-matches = plugin.search("PostgreSQL", limit=10)
-
-# Get recent history
-recent = plugin.get_recent(limit=10)
 ```
 
 **CLI:**
@@ -206,7 +217,16 @@ python3 Hermes/plugin.py recall "search query"
 python3 Hermes/plugin.py search "pattern"
 python3 Hermes/plugin.py recent
 python3 Hermes/plugin.py stats
+python3 Hermes/plugin.py install-hooks  # Install Gateway hooks
 ```
+
+**Available Hermes Hook Events:**
+- `agent:start` / `agent:end` - Session lifecycle
+- `agent:step` - Each agent step
+- `message:received` / `message:send` - Message events
+- `tool:before` / `tool:after` - Tool execution (interception)
+- `command:*` - Command events (wildcard)
+- `gateway:startup` - Gateway initialization
 
 ### 4. OpenClaw (Stub) 🔮
 
@@ -220,18 +240,22 @@ Reserved for future agent integration. Hook support will depend on the target ag
 |---------|--------------|------|-------------------|
 | **Claude Code** | ✅ Full | Event-driven hooks | Automatic via `SessionStart`, `UserPromptSubmit`, `PostToolUse` |
 | **Codex CLI** | ⚠️ Experimental | `hooks.json` config | Automatic when `codex_hooks = true` |
-| **Hermes** | ❌ None | Programmatic API | Manual via Python method calls |
+| **Hermes** | ⭐ Dual System | Plugin + Gateway | `ctx.register_hook()` or `~/.hermes/hooks/` |
 | **OpenClaw** | 🔮 TBD | Future | Depends on target framework |
 
 **Available Hook Events:**
-- `SessionStart` - Runs at session start, loads context from vault
-- `UserPromptSubmit` - Runs on each prompt, enriches with relevant vault content
-- `PostToolUse` - Runs after tool execution, stores important results
-- `PreToolUse` - Runs before tool execution (validation)
-- `Stop` - Runs at conversation turn end
+- `SessionStart` / `agent:start` - Runs at session start, loads context from vault
+- `UserPromptSubmit` / `message:received` - Runs on each prompt, enriches with relevant vault content
+- `PostToolUse` / `tool:after` - Runs after tool execution, stores important results
+- `PreToolUse` / `tool:before` - Runs before tool execution (validation/interception)
+- `Stop` / `agent:end` - Runs at conversation turn end
 
-**Claude Code:** Hooks configured in `.claude-plugin/plugin.json`
-**Codex CLI:** Hooks configured in `.codex/hooks.json` (requires `codex_hooks = true` in config.toml)
+**Configuration Locations:**
+- **Claude Code:** `.claude-plugin/plugin.json`
+- **Codex CLI:** `.codex/hooks.json` (requires `codex_hooks = true` in `~/.codex/config.toml`)
+- **Hermes:** 
+  - Plugin hooks: `ctx.register_hook()` in Python code
+  - Gateway hooks: `~/.hermes/hooks/<hook-name>/HOOK.yaml` + `handler.py`
 
 ## Shared Module
 
@@ -359,8 +383,12 @@ obsidian-memory/
 │                   ├── search.py
 │                   ├── query.py
 │                   └── history.py
-├── Hermes/                              # Hermes plugin ⚙️ API only
-│   └── plugin.py
+├── Hermes/                              # Hermes plugin ⭐ Dual hook system
+│   ├── plugin.py                        # Python module with ctx.register_hook()
+│   └── gateway-hooks/                   # 🎣 Gateway hooks template
+│       └── obsidian-memory/
+│           ├── HOOK.yaml                # Gateway hook manifest
+│           └── handler.py               # Gateway hook handler
 └── OpenClaw/                            # OpenClaw stub 🔮
     └── plugin.py
 ```
