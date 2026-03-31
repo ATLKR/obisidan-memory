@@ -90,43 +90,81 @@ claude plugin install /path/to/ClaudeCode
 /obsidian-memory:vault-search "trading system"
 ```
 
-### 2. Codex CLI Skill ❌ (No Hooks)
+### 2. Codex CLI Plugin ⭐ (Hooks - Experimental)
 
 Location: `Codex/`
 
-> ⚠️ **Note:** Codex CLI does **not** support hooks. It uses a skill-based system where you invoke tools explicitly via prompts or CLI scripts.
+> ⚠️ **Note:** Hooks are **experimental** in Codex CLI. Enable by adding to `~/.codex/config.toml`:
+> ```toml
+> [features]
+> codex_hooks = true
+> ```
+
+Codex now supports hooks similar to Claude Code:
 
 ```
 Codex/
-└── .codex/
-    └── skills/
-        └── obsidian-memory/
-            ├── SKILL.md           # Skill definition
-            └── scripts/
-                ├── store.py       # Store memory
-                ├── search.py      # Search vault
-                ├── query.py       # Query entries
-                └── history.py     # Get history
+├── .codex-plugin/
+│   └── plugin.json          # Plugin manifest
+├── .codex/
+│   ├── hooks.json           # 🎣 Hook configuration
+│   └── skills/
+│       └── obsidian-memory/
+│           ├── SKILL.md              # Skill definition
+│           ├── agents/
+│           │   └── openai.yaml       # Skill metadata
+│           ├── hooks/                # 🎣 Hook scripts
+│           │   ├── on-session-start.py
+│           │   ├── on-prompt-submit.py
+│           │   └── on-tool-use.py
+│           └── scripts/              # Manual scripts
+│               ├── store.py
+│               ├── search.py
+│               ├── query.py
+│               └── history.py
 ```
 
+**Supported Hook Events:**
+- `SessionStart` - Load recent context when session begins
+- `UserPromptSubmit` - Auto-enrich prompts with relevant vault content
+- `PostToolUse` - Store important tool executions automatically
+- `PreToolUse` - Validate before tool execution
+- `Stop` - Run at conversation turn end
+
 **Installation:**
+
 ```bash
-# Copy or symlink to your project's .codex directory
+# Via local marketplace
+# Create ~/.agents/plugins/marketplace.json:
+{
+  "plugins": [
+    {
+      "source": { "path": "./obsidian-memory" },
+      "interface": { "displayName": "Obsidian Memory" }
+    }
+  ]
+}
+
+# Or copy skill to your project
 cp -r Codex/.codex/skills/obsidian-memory /your/project/.codex/skills/
 
-# Or symlink for development
-ln -s $(pwd)/Codex/.codex/skills/obsidian-memory /your/project/.codex/skills/
+# Enable hooks
+echo '[features]' >> ~/.codex/config.toml
+echo 'codex_hooks = true' >> ~/.codex/config.toml
 ```
 
 **Usage:**
 ```bash
-# Direct script usage
+# Automatic (via hooks):
+# - Context loads automatically when session starts
+# - Prompts are enriched with relevant vault content
+# - Tool executions are stored automatically
+
+# Manual script usage:
 python3 .codex/skills/obsidian-memory/scripts/store.py "Remember this"
 python3 .codex/skills/obsidian-memory/scripts/search.py "database"
-python3 .codex/skills/obsidian-memory/scripts/query.py "architecture"
-python3 .codex/skills/obsidian-memory/scripts/history.py
 
-# Via Codex prompt (skill invocation)
+# Via Codex prompt:
 "Remember that we decided to use PostgreSQL"
 "Search my vault for database decisions"
 ```
@@ -181,15 +219,19 @@ Reserved for future agent integration. Hook support will depend on the target ag
 | Harness | Hook Support | Type | Context Automation |
 |---------|--------------|------|-------------------|
 | **Claude Code** | ✅ Full | Event-driven hooks | Automatic via `SessionStart`, `UserPromptSubmit`, `PostToolUse` |
-| **Codex CLI** | ❌ None | Skill-based | Manual via skill invocation |
+| **Codex CLI** | ⚠️ Experimental | `hooks.json` config | Automatic when `codex_hooks = true` |
 | **Hermes** | ❌ None | Programmatic API | Manual via Python method calls |
 | **OpenClaw** | 🔮 TBD | Future | Depends on target framework |
 
-**Claude Code Hooks Available:**
+**Available Hook Events:**
 - `SessionStart` - Runs at session start, loads context from vault
 - `UserPromptSubmit` - Runs on each prompt, enriches with relevant vault content
 - `PostToolUse` - Runs after tool execution, stores important results
-- `PreToolUse`, `InstructionsLoaded`, `Notification`, `SubagentStart/Stop`, etc.
+- `PreToolUse` - Runs before tool execution (validation)
+- `Stop` - Runs at conversation turn end
+
+**Claude Code:** Hooks configured in `.claude-plugin/plugin.json`
+**Codex CLI:** Hooks configured in `.codex/hooks.json` (requires `codex_hooks = true` in config.toml)
 
 ## Shared Module
 
@@ -298,16 +340,25 @@ obsidian-memory/
 │       ├── on-session-start.py          # Load context at session start
 │       ├── on-prompt-submit.py          # Enrich prompts with vault context
 │       └── on-tool-use.py               # Store tool results to vault
-├── Codex/                               # Codex CLI skill ❌ No hooks
+├── Codex/                               # Codex CLI plugin ⚠️ Experimental hooks
+│   ├── .codex-plugin/
+│   │   └── plugin.json                   # Plugin manifest
 │   └── .codex/
+│       ├── hooks.json                    # 🎣 Hook configuration
 │       └── skills/
 │           └── obsidian-memory/
 │               ├── SKILL.md              # Skill definition
-│               └── scripts/
-│                   ├── store.py          # Store memory
-│                   ├── search.py         # Search vault
-│                   ├── query.py          # Query entries
-│                   └── history.py        # Get history
+│               ├── agents/
+│               │   └── openai.yaml       # Skill metadata
+│               ├── hooks/                  # 🎣 Hook scripts
+│               │   ├── on-session-start.py
+│               │   ├── on-prompt-submit.py
+│               │   └── on-tool-use.py
+│               └── scripts/              # Manual scripts
+│                   ├── store.py
+│                   ├── search.py
+│                   ├── query.py
+│                   └── history.py
 ├── Hermes/                              # Hermes plugin ⚙️ API only
 │   └── plugin.py
 └── OpenClaw/                            # OpenClaw stub 🔮

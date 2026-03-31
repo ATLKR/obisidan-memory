@@ -16,11 +16,23 @@ description: |
   - Look up information from previous work
   - Find relevant documentation or decisions
   - Get context about the project structure
+  
+  Enable automatic context loading by setting in ~/.codex/config.toml:
+  [features]
+  codex_hooks = true
 ---
 
 # Obsidian Memory Skill for Codex
 
-## Commands
+## Automatic Context (Hooks)
+
+When hooks are enabled (`codex_hooks = true` in config.toml):
+
+1. **SessionStart** - Loads recent conversation history at session start
+2. **UserPromptSubmit** - Automatically enriches prompts with relevant vault content
+3. **PostToolUse** - Stores important tool executions (Edit, Write, Bash) to vault
+
+## Manual Commands
 
 ### Store Memory
 ```bash
@@ -54,6 +66,30 @@ Stored memories go to:
 Each file includes:
 - YAML frontmatter with metadata (id, timestamp, tags)
 - The content you asked to store
+
+## Plugin Installation
+
+This skill is packaged as a Codex plugin:
+
+```bash
+# Via local marketplace
+# Create ~/.agents/plugins/marketplace.json:
+{
+  "plugins": [
+    {
+      "source": {
+        "path": "./obsidian-memory"
+      },
+      "interface": {
+        "displayName": "Obsidian Memory"
+      }
+    }
+  ]
+}
+
+# Or use $plugin-creator skill
+$plugin-creator
+```
 
 ## Integration
 

@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "match": {
+          "always": true
+        },
+        "command": {
+          "description": "Load context from Obsidian Vault at session start",
+          "exe": ".codex/skills/obsidian-memory/hooks/on-session-start.py"
+        }
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "match": {
+          "always": true
+        },
+        "command": {
+          "description": "Enrich prompt with relevant Obsidian context",
+          "exe": ".codex/skills/obsidian-memory/hooks/on-prompt-submit.py"
+        }
+      }
+    ],
+    "PostToolUse": [
+      {
+        "match": {
+          "tools": ["Read", "Edit", "Write", "Bash"]
+        },
+        "command": {
+          "description": "Store important tool results to Obsidian",
+          "exe": ".codex/skills/obsidian-memory/hooks/on-tool-use.py"
+        }
+      }
+    ]
+  }
+}

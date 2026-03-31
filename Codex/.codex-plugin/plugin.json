@@ -1,0 +1,20 @@
+{
+  "name": "obsidian-memory",
+  "version": "1.0.0",
+  "description": "Use Obsidian Vault as persistent memory for Codex CLI",
+  "author": "ATLKR",
+  "skills": [
+    ".codex/skills/obsidian-memory"
+  ],
+  "hooks": [
+    ".codex/hooks.json"
+  ],
+  "mcpServers": [],
+  "env": {
+    "OBSIDIAN_VAULT_PATH": {
+      "description": "Path to your Obsidian vault",
+      "default": "~/vaults/AllenPrimaryNotes",
+      "required": true
+    }
+  }
+}

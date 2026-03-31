@@ -1,0 +1,21 @@
+name: obsidian-memory
+description: |
+  Use Obsidian Vault as persistent memory for Codex CLI.
+  
+  This skill allows Codex to:
+  - Store important information to your Obsidian vault
+  - Search your vault for relevant context and knowledge
+  - Retrieve past conversations and decisions
+  - Query existing notes for project context
+  
+  The vault acts as long-term memory that persists across Codex sessions.
+  
+  Use when you need to:
+  - Remember something for later sessions
+  - Look up information from previous work
+  - Find relevant documentation or decisions
+  - Get context about the project structure
+  
+  Enable automatic context loading by setting in ~/.codex/config.toml:
+  [features]
+  codex_hooks = true
