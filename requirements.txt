@@ -1,0 +1,18 @@
+# Obsidian Memory System - Requirements
+# Multi-Agent Persistent Memory with Cross-Agent Query Protocol
+
+# Core dependencies
+# Note: qmd library is optional - system works with basic file operations
+# Install with: pip install qmd
+
+# Optional dependencies for enhanced features
+# numpy>=1.21.0  # For embedding support (optional)
+# qmd>=0.1.0     # For advanced markdown processing (optional)
+
+# Development dependencies (optional)
+# pytest>=7.0.0
+# black>=22.0.0
+# mypy>=0.950
+
+# No hard requirements - uses only Python standard library
+# for maximum compatibility across agent environments
